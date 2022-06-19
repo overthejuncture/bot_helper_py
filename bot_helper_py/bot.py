@@ -1,2 +1,4 @@
-def check(n):
-    print(n)
+from telegram import Update
+
+def check(update: Update):
+    print(update.message.from_user.id)
