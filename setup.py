@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='bot',
+    name='bot_helper_py',
     url='https://github.com/overthejuncture/bot_helper_py.git',
     author='OTJ',
     author_email='overthejuncure@gmail.com',
