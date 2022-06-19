@@ -6,7 +6,7 @@ setup(
     author='OTJ',
     author_email='overthejuncure@gmail.com',
     # Needed to actually package something
-    packages=['bot'],
+    packages=['bot_helper_py'],
     # Needed for dependencies
     install_requires=[],
     # *strongly* suggested for sharing
