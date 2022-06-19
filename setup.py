@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='Package check',
+    name='bot',
     url='https://github.com/overthejuncture/bot_helper_py.git',
     author='OTJ',
     author_email='overthejuncure@gmail.com',
