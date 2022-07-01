@@ -6,7 +6,6 @@ from typing import (
     Tuple,
     Dict
 )
-import logging
 import json
 
 from telegram import (
