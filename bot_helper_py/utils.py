@@ -1,4 +1,3 @@
-from tkinter import ACTIVE
 from typing import (
     List,
     Callable,
@@ -14,16 +13,20 @@ from telegram import (
     Update
 )
 
+from telegram.ext import (
+    CallbackContext
+)
+
 from django.db.models import Model
+from django.db.models.query import QuerySet
 
 ACTION_LITERAL = 'a'
 DATA_LITERAL = 'd'
 EDIT_ACTION = 'e'
 DELETE_ACTION = 'd'
-LIMIT_DEFAULT = 3 
+LIMIT_DEFAULT = 10
 
-def check(update: Update):
-    print(update.message.from_user.id)
+MODEL_TITLE_DEFAULT = lambda x: x.title
 
 def list_all(list: List[Model], field: Callable = lambda x:x.name) -> str:
     return "\n".join("{idx}. {text}".format(idx=idx+1, text=field(x)) for idx, x in enumerate(list))
@@ -31,8 +34,8 @@ def list_all(list: List[Model], field: Callable = lambda x:x.name) -> str:
 def list_with_keyboard_and_pager(
     list: List[Model],
     start: int = 0,
-    limit: int = LIMIT_DEFAULT,
-    field: Callable = lambda x:x.name,
+    limit: int = None,
+    field: Callable = None,
     n_cols: int = 2,
 ):
     return _list_with_keyboard(list, start, limit, field, n_cols, make_pager=True)
@@ -40,11 +43,14 @@ def list_with_keyboard_and_pager(
 def _list_with_keyboard(
     list: List[Model],
     start: int = 0,
-    limit: int = LIMIT_DEFAULT,
-    field: Callable = lambda x:x.name,
+    limit: int = None,
+    field: Callable = None,
     n_cols: int = 2,
     make_pager: bool = False
 ):
+    limit = limit or LIMIT_DEFAULT
+    field = field or MODEL_TITLE_DEFAULT
+
     list = list.all()[start:start+limit+1]
 
     show_next = False if len(list) != limit+1 else True
@@ -61,10 +67,11 @@ def _list_with_keyboard(
 
 def make_pager_buttons(
     start: int = 0,
-    limit: int = LIMIT_DEFAULT,
+    limit: int = None,
     show_prev: bool = True,
     show_next: bool = True
 ) -> List[InlineKeyboardButton]:
+    limit = limit or LIMIT_DEFAULT
     buttons = []
     if show_prev:
         buttons.append(InlineKeyboardButton(
@@ -79,11 +86,6 @@ def make_pager_buttons(
             )
         )
     return buttons
-
-
-def make_previous_button(start: int = 0, limit: int = LIMIT_DEFAULT):
-    start = start - limit if start - limit > 0 else 0
-    button = InlineKeyboardButton('<', callback_data=json.dumps({'start': start, 'limit': limit}))
 
 def build_menu(
     buttons: List[InlineKeyboardButton],
@@ -112,3 +114,18 @@ def create_action_buttons(data: Dict = {}, edit: bool = False, delete: bool = Fa
     if delete:
         buttons.append(InlineKeyboardButton('Удалить', callback_data=json.dumps({ACTION_LITERAL: DELETE_ACTION, DATA_LITERAL: data})))
     return [buttons]
+
+def pager(func):
+    def wrapper(update: Update, context: CallbackContext):
+        start, limit = proccess_pager(update)
+        params = func(update, context)
+        if isinstance(params, QuerySet):
+            list = params
+            field = MODEL_TITLE_DEFAULT
+        else:
+            list, field = params
+
+        text, r_m = list_with_keyboard_and_pager(list, start, limit, field=field)
+        update.callback_query.edit_message_text(text, reply_markup=r_m)
+
+    return wrapper

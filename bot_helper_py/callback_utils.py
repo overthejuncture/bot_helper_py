@@ -1,10 +1,12 @@
-from ast import Call
 from telegram.callbackquery import CallbackQuery
 import json
 from . import utils
 
 def is_pager_action(callback: CallbackQuery):
-    data = json.loads(callback.data)
+    if not isinstance(callback, str):
+        data = json.loads(callback.data)
+    else: 
+        data = json.loads(callback)
     return True if data.get('start') != None else False
 
 def get_action(callback: CallbackQuery):
